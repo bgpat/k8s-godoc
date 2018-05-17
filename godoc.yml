@@ -29,6 +29,7 @@ spec:
         envFrom:
         - secretRef:
             name: godoc
+            optional: true
         ports:
         - containerPort: 8080
         args:
