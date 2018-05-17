@@ -13,10 +13,8 @@ godoc.org on Kubernetes
 
 3. Set GITHUB_TOKEN (optional)
     
-    Get your access token for GitHub
-    https://github.com/settings/tokens/new?description=godoc&scopes=public_repo
-
-    Create resource `secret/godoc`.
+    [Get your access token for GitHub](https://github.com/settings/tokens/new?description=godoc&scopes=public_repo),
+    and create a resource `secret/godoc`.
     
     ```bash
     kubectl -n godoc create secret generic godoc --from-literal=GITHUB_TOKEN=your-token-for-github
