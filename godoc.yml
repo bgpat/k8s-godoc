@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: godoc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: godoc
+  namespace: godoc
+  labels:
+    app: godoc
+    role: web
+spec:
+  selector:
+    matchLabels:
+      app: godoc
+      role: web
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: godoc
+        role: web
+    spec:
+      containers:
+      - name: godoc
+        image: bgpat/gddo:latest
+        envFrom:
+        - secretRef:
+            name: godoc
+        ports:
+        - containerPort: 8080
+        args:
+        - --sidebar
+        - --remoteapi-endpoint
+        - api:8080
+        - --db-server
+        - redis://redis:6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: godoc
+  namespace: godoc
+spec:
+  selector:
+    app: godoc
+    role: web
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+    name: http
+  type: NodePort
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: godoc
+  namespace: godoc
+spec:
+  tls:
+  - hosts:
+    - godoc.401.jp
+    secretName: cert-manager-tls
+  rules:
+  - host: godoc.401.jp
+    http:
+      paths:
+      - backend:
+          serviceName: godoc
+          servicePort: 80
+---
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Issuer
+metadata:
+  name: letsencrypt-prod
+  namespace: godoc
+spec:
+  acme:
+    server: https://acme-v01.api.letsencrypt.org/directory
+    email: bgpat23@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    http01: {}
+    dns01:
+      providers:
+      - name: prod-dns
+        clouddns:
+          serviceAccountSecretRef:
+            name: clouddns-service-account
+            key: cert-manager-key.json
+          project: bgpat-188622
+---
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: godoc
+  namespace: godoc
+spec:
+  secretName: cert-manager-tls
+  issuerRef:
+    name: letsencrypt-prod
+  commonName: godoc.401.jp
+  dnsNames:
+  - godoc.401.jp
+  acme:
+    config:
+    - dns01:
+        provider: prod-dns
+      domains:
+      - godoc.401.jp

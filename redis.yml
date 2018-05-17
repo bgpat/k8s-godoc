@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: godoc
+  labels:
+    app: redis
+    role: db
+spec:
+  serviceName: redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+      role: db
+  template:
+    metadata:
+      labels:
+        app: redis
+        role: db
+    spec:
+      containers:
+      - name: redis
+        image: redis:3.2-alpine
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: godoc
+  labels:
+    app: redis
+    role: db
+spec:
+  ports:
+  - port: 6379
+    name: redis
+    protocol: TCP
+  selector:
+    app: redis
+    role: db
